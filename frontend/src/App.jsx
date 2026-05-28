@@ -163,15 +163,19 @@ function DramaCard({ drama, inCart, onToggleCart }) {
           >
             {inCart ? '移除' : '加入购物车'}
           </button>
-          {drama.link && (
+          {drama.link ? (
             <a
               href={drama.link}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 border border-blue-100 rounded-lg hover:bg-blue-50 transition-colors"
             >
-              试看
+              看样片
             </a>
+          ) : (
+            <span className="px-3 py-2 text-sm text-gray-300 border border-gray-100 rounded-lg select-none">
+              暂无样片
+            </span>
           )}
         </div>
       </div>
