@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import data from './dramas.json'
+import { saveAs } from 'file-saver'
 
 // ==================== 常量 ====================
 const SORT_OPTIONS = [
@@ -246,6 +247,29 @@ export default function App() {
   const clearCart = () => {
     setCart([])
   }
+
+  // 导出 CSV
+  const exportCSV = useCallback(() => {
+    if (cartItems.length === 0) return
+
+    const BOM = '\uFEFF'
+    const headers = ['序号', '剧名', '集数', '分类', '标签', '价格档位', '热度', '简介']
+    const rows = cartItems.map((d, i) => [
+      i + 1,
+      `"${d.name.replace(/"/g, '""')}"`,
+      d.episodes || '',
+      d.category || '',
+      `"${d.tags.join('、')}"`,
+      d.price === 4000 ? '¥4,000' : '¥20,000',
+      d.heat > 0 ? `${d.heat}万` : '',
+      `"${(d.intro || '').replace(/"/g, '""').replace(/[\r\n]+/g, ' ')}"`,
+    ])
+
+    const csv = BOM + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const date = new Date().toISOString().slice(0, 10)
+    saveAs(blob, `短剧选购清单_${date}.csv`)
+  }, [cartItems])
 
   // 筛选逻辑
   const filteredDramas = useMemo(() => {
@@ -573,12 +597,21 @@ export default function App() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm text-gray-500">共 {cartCount} 部</span>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-3">
                           <span className="text-base font-semibold text-gray-900">总报价</span>
                           <span className="text-xl font-bold text-red-600">
                             ¥{cartTotal.toLocaleString()}
                           </span>
                         </div>
+                        <button
+                          onClick={exportCSV}
+                          className="w-full py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          导出选购清单
+                        </button>
                       </div>
                     </>
                   )}
@@ -591,8 +624,8 @@ export default function App() {
 
       {/* 移动端底部购物车按钮 */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 shadow-lg">
-        <div className="flex items-center px-4 py-3">
-          <div className="flex-1">
+        <div className="flex items-center px-4 py-3 gap-3">
+          <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2">
               <span className="text-sm text-gray-500">选中 {cartCount} 部</span>
               <span className="text-lg font-bold text-red-600">
@@ -600,12 +633,23 @@ export default function App() {
               </span>
             </div>
           </div>
+          {cartCount > 0 && (
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-1.5 px-3 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              导出
+            </button>
+          )}
           <button
             onClick={() => setIsCartOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors"
           >
             <CartIcon className="w-4 h-4" />
-            查看购物车
+            购物车
             {cartCount > 0 && (
               <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-red-500 text-white rounded-full">
                 {cartCount}
@@ -649,6 +693,15 @@ export default function App() {
                     ¥{cartTotal.toLocaleString()}
                   </span>
                 </div>
+                <button
+                  onClick={exportCSV}
+                  className="w-full py-3 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center justify-center gap-2 mb-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  导出选购清单
+                </button>
                 <button
                   onClick={clearCart}
                   className="w-full py-3 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
