@@ -29,3 +29,7 @@ yarn-error.log*
 .cache/
 *.cache
 docs/*.xlsx
+
+# Data & scripts (local only)
+data/link_verification.json
+scripts/
