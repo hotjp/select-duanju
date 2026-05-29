@@ -644,8 +644,8 @@ export default function App() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 shadow-lg">
         <div className="flex items-center px-4 py-3 gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm text-gray-500">选中 {cartCount} 部</span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-xs text-gray-400">选中 {cartCount} 部</span>
               <span className="text-lg font-bold text-red-600">
                 ¥{cartTotal.toLocaleString()}
               </span>
