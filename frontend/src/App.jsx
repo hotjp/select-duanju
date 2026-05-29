@@ -73,11 +73,22 @@ const ChevronUpIcon = ({ className }) => (
   </svg>
 )
 
+const PlusIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+)
+
+const MinusIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+  </svg>
+)
+
 // ==================== 子组件 ====================
 
 // 剧卡片
-function DramaCard({ drama, inCart, onToggleCart }) {
-  const [expanded, setExpanded] = useState(false)
+function DramaCard({ drama, inCart, onToggleCart, onShowDetail }) {
   const is4000 = drama.priceTier === '4000'
   const priceLabel = is4000 ? '¥4,000' : '¥20,000'
   const priceColor = is4000 ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-orange-50 text-orange-700 border-orange-100'
@@ -140,13 +151,13 @@ function DramaCard({ drama, inCart, onToggleCart }) {
 
         {/* 简介 */}
         <div className="text-sm text-gray-600 mb-4 flex-1">
-          <p className={`${expanded ? '' : 'line-clamp-3'}`}>{drama.intro || '暂无简介'}</p>
+          <p className="line-clamp-3">{drama.intro || '暂无简介'}</p>
           {drama.intro && drama.intro.length > 60 && (
             <button
-              onClick={() => setExpanded(!expanded)}
+              onClick={() => onShowDetail(drama)}
               className="text-blue-600 text-xs mt-1 hover:underline"
             >
-              {expanded ? '收起' : '展开'}
+              展开
             </button>
           )}
         </div>
@@ -155,13 +166,14 @@ function DramaCard({ drama, inCart, onToggleCart }) {
         <div className="flex items-center gap-2 mt-auto pt-3 border-t border-gray-50">
           <button
             onClick={() => onToggleCart(drama.id)}
-            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+            title={inCart ? '从购物车移除' : '加入购物车'}
+            className={`p-2.5 rounded-lg transition-colors ${
               inCart
                 ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-100'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
-            {inCart ? '移除' : '加入购物车'}
+            {inCart ? <MinusIcon className="w-5 h-5" /> : <PlusIcon className="w-5 h-5" />}
           </button>
           {drama.link ? (
             <a
@@ -228,6 +240,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showSort, setShowSort] = useState(false)
+  const [detailDrama, setDetailDrama] = useState(null)
 
   // 持久化购物车
   useEffect(() => {
@@ -251,29 +264,6 @@ export default function App() {
   const clearCart = () => {
     setCart([])
   }
-
-  // 导出 CSV
-  const exportCSV = useCallback(() => {
-    if (cartItems.length === 0) return
-
-    const BOM = '\uFEFF'
-    const headers = ['序号', '剧名', '集数', '分类', '标签', '价格档位', '热度', '简介']
-    const rows = cartItems.map((d, i) => [
-      i + 1,
-      `"${d.name.replace(/"/g, '""')}"`,
-      d.episodes || '',
-      d.category || '',
-      `"${d.tags.join('、')}"`,
-      d.price === 4000 ? '¥4,000' : '¥20,000',
-      d.heat > 0 ? `${d.heat}万` : '',
-      `"${(d.intro || '').replace(/"/g, '""').replace(/[\r\n]+/g, ' ')}"`,
-    ])
-
-    const csv = BOM + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const date = new Date().toISOString().slice(0, 10)
-    saveAs(blob, `短剧选购清单_${date}.csv`)
-  }, [cartItems])
 
   // 筛选逻辑
   const filteredDramas = useMemo(() => {
@@ -348,6 +338,29 @@ export default function App() {
 
   const cartTotal = cartItems.reduce((sum, item) => sum + item.price, 0)
   const cartCount = cartItems.length
+
+  // 导出 CSV
+  const exportCSV = useCallback(() => {
+    if (cartItems.length === 0) return
+
+    const BOM = '\uFEFF'
+    const headers = ['序号', '剧名', '集数', '分类', '标签', '价格档位', '热度', '简介']
+    const rows = cartItems.map((d, i) => [
+      i + 1,
+      `"${d.name.replace(/"/g, '""')}"`,
+      d.episodes || '',
+      d.category || '',
+      `"${d.tags.join('、')}"`,
+      d.price === 4000 ? '¥4,000' : '¥20,000',
+      d.heat > 0 ? `${d.heat}万` : '',
+      `"${(d.intro || '').replace(/"/g, '""').replace(/[\r\n]+/g, ' ')}"`,
+    ])
+
+    const csv = BOM + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const date = new Date().toISOString().slice(0, 10)
+    saveAs(blob, `短剧选购清单_${date}.csv`)
+  }, [cartItems])
 
   // 标签操作
   const toggleTag = (tag) => {
@@ -558,6 +571,7 @@ export default function App() {
                     drama={drama}
                     inCart={cart.includes(drama.id)}
                     onToggleCart={toggleCart}
+                    onShowDetail={setDetailDrama}
                   />
                 ))}
               </div>
@@ -714,6 +728,38 @@ export default function App() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 详情弹窗 */}
+      {detailDrama && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setDetailDrama(null)}>
+          <div className="absolute inset-0 bg-black/50" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 pr-8">{detailDrama.name}</h3>
+              <button
+                onClick={() => setDetailDrama(null)}
+                className="absolute right-4 top-4 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <CloseIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{detailDrama.intro || '暂无简介'}</p>
+            </div>
+            <div className="p-4 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setDetailDrama(null)}
+                className="px-5 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                关闭
+              </button>
+            </div>
           </div>
         </div>
       )}
